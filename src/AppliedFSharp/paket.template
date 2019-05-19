@@ -1,0 +1,29 @@
+type file
+id AppliedFSharp
+title
+    AppliedFSharp
+owners
+    Kevin Schneider
+authors 
+    Kevin Schneider
+projectUrl
+    https://github.com/kMutagene/AppliedFSharp
+iconUrl
+    https://raw.githubusercontent.com/kMutagene/AppliedFSharp/master/docs/files/img/logo.png
+licenseUrl
+    https://github.com/kMutagene/AppliedFSharp/blob/master/LICENSE.txt
+requireLicenseAcceptance
+    false
+language
+    F#
+copyright
+    Copyright 2017
+tags
+    F# Applied Challenge Bioinformatics
+summary
+    My submission for the F# Applied Challenge
+description
+    Description not set
+
+files
+	../../bin/AppliedFSharp ==> lib
