@@ -310,16 +310,7 @@ module ContainerAPIs =
         type OutputFileOptions =
             |NotImplemented
 
-        //  -n [ --outNumber ] arg (=1)  number of (sub)optimal interactions to report
-        //                               (arg in range [0,1000])
-        //  --outOverlap arg (=Q)        suboptimal output : interactions can overlap
-        //                                'N' in none of the sequences,
-        //                                'T' in the target only,
-        //                                'Q' in the query only,
-        //                                'B' in both sequences
-
-
-
+        ///
         type IntaRNAParams =
             | Query of QueryOptions list
             | Target of TargetOptions list
@@ -343,7 +334,7 @@ module ContainerAPIs =
                 | Seed              sList -> sList |> List.map SeedOptions.make             |> List.concat 
                 | OutputMode        o     -> OutputModeOptions.make o
 
-
+        ///
         let runIntaRNAAsync (bcContext:BioContainer.BcContext) (opt:IntaRNAParams list) = 
             let cmds = opt |> List.map (IntaRNAParams.makeCmdWith bcContext.Mount)
             let tp = "IntaRNA"::(cmds |> List.concat)
@@ -355,19 +346,19 @@ module ContainerAPIs =
                 return res
             }
 
-
+        ///
         let runIntaRNA (bcContext:BioContainer.BcContext) (opt:IntaRNAParams list) = 
             runIntaRNAAsync bcContext opt
             |> Async.RunSynchronously
 
-        module DefaultCofig =  
-
+        module DefaultConfig =  
+            ///
             type IntaRNAResult = 
                 {
                     InteractionChart : string
                     InteractionEnergy: float
                 }
-
+            ///
             type DetailedIntaRNAResult = 
                 {
                     InteractionChart : string
@@ -375,7 +366,7 @@ module ContainerAPIs =
                     LoopEnergy : float
                 }
 
-
+            ///
             let detailedIntaRNAResultofString (res: string) =
                 try 
                     let lines = res.Replace("\r\n","\n").Split('\n')
@@ -409,7 +400,7 @@ module ContainerAPIs =
                         LoopEnergy = nan
                     }
 
-
+            ///
             let intaRNAResultofString (res: string) =
                 let lines = res.Replace("\r\n","\n").Split('\n')
                 let chart = 
@@ -427,7 +418,7 @@ module ContainerAPIs =
                 {InteractionChart = chart; InteractionEnergy=energy}
 
 
-                
+            ///
             let intaRNASimple (bcContext:BioContainer.BcContext) probe target = 
                 let paramz = 
                     [
@@ -444,6 +435,7 @@ module ContainerAPIs =
                 with e as exn -> printfn "FAIL"
                                  nan
 
+            ///
             let intaRNADetailed (bcContext:BioContainer.BcContext) probe target = 
                 let paramz = 
                     [
@@ -479,3 +471,56 @@ module ContainerAPIs =
         let runBlastNShort (bcContext:BioContainer.BcContext) (opt:BlastParams list) =
             runBlastNShortAsync bcContext opt
             |> Async.RunSynchronously
+
+        module DefaultConfig =
+        
+            let private createMakeBlastDBParams inputPath =
+                [
+                    MakeDbParams.DbType Nucleotide
+                    MakeDbParams.Input  inputPath
+                    MakeDbParams.Output inputPath
+                ]
+
+            let private outputFormat= 
+    
+                [   
+                    OutputCustom.Query_SeqId; 
+                    OutputCustom.Subject_SeqId;
+                    OutputCustom.Query_Length;
+                    OutputCustom.Subject_Length;
+                    OutputCustom.AlignmentLength;
+                    OutputCustom.MismatchCount;
+                    OutputCustom.IdentityCount;
+                    OutputCustom.PositiveScoringMatchCount;
+                    OutputCustom.Evalue;
+                    OutputCustom.Bitscore;
+                ] 
+
+            let private createBlastNParams dbPath queryPath  = 
+                [
+                    BlastParams.SearchDB    dbPath
+                    BlastParams.Query       queryPath
+                    BlastParams.Output      dbPath
+                    OutputTypeCustom
+                        (
+                             OutputType.TabularWithComments,
+                             [   
+                                OutputCustom.Query_SeqId; 
+                                OutputCustom.Subject_SeqId;
+                                OutputCustom.Query_Length;
+                                OutputCustom.Subject_Length;
+                                OutputCustom.AlignmentLength;
+                                OutputCustom.MismatchCount;
+                                OutputCustom.IdentityCount;
+                                OutputCustom.PositiveScoringMatchCount;
+                                OutputCustom.Evalue;
+                                OutputCustom.Bitscore;
+                             ] 
+                        )
+                ]
+
+            let runMakeBlastDBDefault (bcContext:BioContainer.BcContext) dbPath = 
+                Blast.runMakeBlastDB bcContext (createMakeBlastDBParams dbPath)
+
+            let runBlastNShortDefault (bcContext:BioContainer.BcContext) dbPath queryPath = 
+                runBlastNShort bcContext (createBlastNParams dbPath queryPath)
