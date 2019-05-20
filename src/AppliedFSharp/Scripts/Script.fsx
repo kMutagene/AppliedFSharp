@@ -370,12 +370,14 @@ type IntaRNAParams =
     | Target of TargetOptions list
     | PredictionMode of PredictionModeOptions list
     | Seed of SeedOptions list
+    | OutputMode of OutputModeOptions
 
     static member makeCmd = function
         | Query             qList -> qList |> List.map QueryOptions.make            |> List.concat 
         | Target            tList -> tList |> List.map TargetOptions.make           |> List.concat 
         | PredictionMode    pList -> pList |> List.map PredictionModeOptions.make   |> List.concat 
         | Seed              sList -> sList |> List.map SeedOptions.make             |> List.concat 
+        | OutputMode        o     -> OutputModeOptions.make o
 
     static member makeCmdWith (m:MountInfo) = 
         let cPath p = (MountInfo.containerPathOf m p)
@@ -384,6 +386,7 @@ type IntaRNAParams =
         | Target            tList -> tList |> List.map (TargetOptions.makeWith m)   |> List.concat 
         | PredictionMode    pList -> pList |> List.map PredictionModeOptions.make   |> List.concat 
         | Seed              sList -> sList |> List.map SeedOptions.make             |> List.concat 
+        | OutputMode        o     -> OutputModeOptions.make o
 
 
 let runIntaRNAAsync (bcContext:BioContainer.BcContext) (opt:IntaRNAParams list) = 
@@ -476,6 +479,48 @@ type IntaRNAResult =
         InteractionEnergy: float
     }
 
+type DetailedIntaRNAResult = 
+    {
+        InteractionChart : string
+        InteractionEnergy: float
+        LoopEnergy : float
+    }
+"  + E(loops)       ="
+
+let detailedIntaRNAResultofString (res: string) =
+    try 
+        let lines = res.Replace("\r\n","\n").Split('\n')
+        let chart = 
+            lines
+            |> String.concat "\r\n"
+
+        let energy = 
+            lines
+            |> Array.filter (fun x -> (x.Contains"interaction energy"))
+            |> fun x -> x.[0].Split(' ').[3]
+            |> float
+
+        let loopEnergy = 
+            lines
+            |> Array.filter (fun x -> (x.Contains"E(loops)"))
+            |> fun x -> 
+                let splt = x.[0].Split('=').[1].Trim().Split(' ').[0]
+                printfn "%s" splt
+                splt
+            |> float
+        {
+            InteractionChart = chart
+            InteractionEnergy = energy
+            LoopEnergy = loopEnergy
+        }
+    with _ -> 
+        {
+            InteractionChart = ""
+            InteractionEnergy = nan
+            LoopEnergy = nan
+        }
+
+
 let intaRNAResultofString (res: string) =
     let lines = res.Replace("\r\n","\n").Split('\n')
     let chart = 
@@ -513,6 +558,22 @@ let intaRNASimple probe target =
         testResult.InteractionEnergy
     with e as exn -> printfn "FAIL"
                      nan
+
+let intaRNADetailed probe target = 
+    let paramz = 
+        [
+            Query [
+                QueryInput (QueryInputOptions.RNASequence probe)
+            ]
+            Target [
+                TargetInput (TargetInputOptions.RNASequence target)
+            ]
+            OutputMode OutputModeOptions.Detailed
+        ]
+
+    runIntaRNA intaRNAContext paramz |> detailedIntaRNAResultofString
+
+let t = (intaRNADetailed "CTGCAGCAACATATGTGAGG" "CTGCAGCAACATATGTGAGG")
 
 
 type BlastNParams = 
@@ -575,7 +636,6 @@ let blastNParamz = [
         (
              OutputType.TabularWithComments,
              [   
-                OutputCustom.Qu
                 OutputCustom.Query_SeqId; 
                 OutputCustom.Subject_SeqId;
                 OutputCustom.Query_Length;
@@ -603,7 +663,7 @@ let generatePrimerPairs (length:int) (templateSpan:int) (item:FastA.FastaItem<Bi
             let fwdPrimer = flankedTemplate.[0 .. length-1]
             let revPrimer = 
                 // reverse primer is reversed complementary strand
-                flankedTemplate.[length - 1 + templateSpan .. (2 * length) + templateSpan - 1]
+                flankedTemplate.[length - 1 + templateSpan .. (2 * length) + templateSpan - 2]
                 |> Array.map (Nucleotides.complement)
                 |> Array.rev
             [|
@@ -652,7 +712,130 @@ let BlastStream =
     |> FSharpAux.IO.FileIO.writeToFile false  @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\BlastQueriesResultsCleaned.txt" 
 
 
+let primerSequenceMap =
+    testPrimers
+    |> Array.map (fun x -> (x.Header.Split(' ').[0].Trim())  => (x.Sequence |> BioArray.toString))
+    |> fun x -> series ["Sequence" => series x]
+    |> Frame.ofColumns
+
+
+
+
+
 let results = 
     let resultSchema = "evalue=float,bit score=float"
     Frame.ReadCsv(path = @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\BlastQueriesResultsCleaned.txt" , separators = "\t",schema=resultSchema)
     |> Frame.filterRows (fun _ os -> os.GetAs<int>("query length") <> os.GetAs<int>("alignment length") &&  os.GetAs<int>("query length") <> os.GetAs<int>("identical")) 
+
+let groupedByHQueryId : Frame<string*int,string> =  
+    results
+    |> Frame.groupRowsBy "query id"
+
+let sortedFrameForHybridization : Frame<(string*(string*(string*int))),string>=
+    groupedByHQueryId
+    |> Frame.mapRowKeys 
+        (fun (seqHeader,index) -> 
+            let splitHeader = seqHeader.Split('_')
+            (splitHeader.[2],(splitHeader.[0],(splitHeader.[1],index)))
+        )
+    |> Frame.dropCol "query id"
+    |> Frame.dropCol "subject id"
+    |> Frame.dropCol "subject length"
+    |> Frame.dropCol "query length"
+    |> Frame.dropCol "alignment length"
+    |> Frame.dropCol "mismatches"
+    |> Frame.dropCol "identical"
+    |> Frame.dropCol "positives"
+    |> Frame.dropCol "bit score"
+
+let HybridizationCandidates = 
+    sortedFrameForHybridization
+    |> Frame.applyLevel 
+        (fun (targetGene,(simNum,(direction,index))) -> (targetGene,(simNum,direction)))
+        Stats.min
+    |> Frame.mapRowKeys (fun (targetGene,(simNum,direction)) -> (sprintf "%s_%s_%s" simNum direction targetGene))
+    |> Frame.join JoinKind.Inner primerSequenceMap
+    |> Frame.mapRowKeys 
+        (fun rk -> 
+            let splitHeader = rk.Split('_')
+            (splitHeader.[2],(splitHeader.[0],splitHeader.[1])))
+
+
+let reverseSet =
+    HybridizationCandidates
+    |> Frame.filterRows (fun (_,(_,direction)) _ -> direction = "rev")
+
+let fwdSet =
+    HybridizationCandidates
+    |> Frame.filterRows (fun (_,(_,direction)) _ -> direction = "fwd")
+
+let revSetHybridizationScored =
+    reverseSet
+    |> fun x ->
+        let selfAlignCol =
+            x
+            |> Frame.mapRows 
+                (fun _ os -> 
+                    let sequence = os.GetAs<string>("Sequence")
+                    intaRNASimple sequence sequence
+             
+                    )
+        let LoopCol =
+            x
+            |> Frame.mapRows 
+                (fun _ os -> 
+                    let sequence = os.GetAs<string>("Sequence")
+                    (intaRNADetailed sequence sequence).LoopEnergy
+             
+                    )       
+        
+        x
+        |> Frame.addCol "SelfAlign" selfAlignCol
+        |> Frame.addCol "Loop" LoopCol
+
+
+let fwdSetHybridizationScored =
+    fwdSet
+    |> fun x ->
+        let selfAlignCol =
+            x
+            |> Frame.mapRows 
+                (fun _ os -> 
+                    let sequence = os.GetAs<string>("Sequence")
+                    intaRNASimple sequence sequence
+             
+                    )
+        let LoopCol =
+            x
+            |> Frame.mapRows 
+                (fun _ os -> 
+                    let sequence = os.GetAs<string>("Sequence")
+                    (intaRNADetailed sequence sequence).LoopEnergy
+             
+                    )       
+        
+        x
+        |> Frame.addCol "SelfAlign" selfAlignCol
+        |> Frame.addCol "Loop" LoopCol
+
+
+let forwardReverseAligned =
+    let fwdSeqs = 
+        fwdSetHybridizationScored
+        |> Frame.getCol "Sequence"
+        |> Series.mapKeys (fun (a,(b,c)) -> a,b)
+    let revSeqs =
+        revSetHybridizationScored
+        |> Frame.getCol "Sequence"
+        |> Series.mapKeys (fun (a,(b,c)) -> a,b)
+    let alSeries = 
+        Series.zipInner fwdSeqs revSeqs
+        |> Series.mapValues (fun (fwd,rev) -> intaRNASimple fwd rev)
+    fwdSetHybridizationScored
+    |> Frame.addCol "PrimerCrossHybridization" (alSeries |> Series.mapKeys (fun (a,b) -> a,(b,"fwd")))
+    |> Frame.merge (revSetHybridizationScored |> Frame.addCol "PrimerCrossHybridization" (alSeries |> Series.mapKeys (fun (a,b) -> a,(b,"rev"))))
+
+
+
+forwardReverseAligned
+|> Frame.sortRowsByKey
