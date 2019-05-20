@@ -218,7 +218,7 @@ Target.create "CleanDocs" (fun _ ->
 
 Target.create "Restore" (fun _ ->
     solutionFile
-    |> DotNet.restore id
+    |> DotNet.restore (fun p -> {p with NoCache = true})
 )
 
 Target.create "Build" (fun _ ->

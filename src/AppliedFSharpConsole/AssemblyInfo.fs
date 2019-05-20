@@ -2,7 +2,7 @@
 namespace System
 open System.Reflection
 
-[<assembly: AssemblyTitleAttribute("AppliedFSharp")>]
+[<assembly: AssemblyTitleAttribute("AppliedFSharpConsole")>]
 [<assembly: AssemblyProductAttribute("AppliedFSharp")>]
 [<assembly: AssemblyDescriptionAttribute("My submission for the F# Applied Challenge")>]
 [<assembly: AssemblyVersionAttribute("0.0.1")>]
@@ -11,7 +11,7 @@ open System.Reflection
 do ()
 
 module internal AssemblyVersionInformation =
-    let [<Literal>] AssemblyTitle = "AppliedFSharp"
+    let [<Literal>] AssemblyTitle = "AppliedFSharpConsole"
     let [<Literal>] AssemblyProduct = "AppliedFSharp"
     let [<Literal>] AssemblyDescription = "My submission for the F# Applied Challenge"
     let [<Literal>] AssemblyVersion = "0.0.1"

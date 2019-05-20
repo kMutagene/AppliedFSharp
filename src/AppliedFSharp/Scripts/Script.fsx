@@ -1,9 +1,11 @@
 
 #r @"..\..\..\packages\System.Buffers\lib\netstandard2.0\System.Buffers.dll"
 #r @"..\..\..\packages\Docker.DotNet\lib\netstandard2.0\Docker.DotNet.dll"
+#r @"..\..\..\packages\FSharpAux\lib\netstandard2.0\FSharpAux.dll"
+#r @"..\..\..\packages\FSharpAux.IO\lib\netstandard2.0\FSharpAux.IO.dll"
+#r @"..\..\..\packages\BioFSharp\lib\netstandard2.0\BioFSharp.dll"
 #r @"..\..\..\packages\BioFSharp.IO\lib\netstandard2.0\BioFSharp.IO.dll"
 #r @"..\..\..\packages\BioFSharp.BioTools\lib\netstandard2.0\BioFSharp.BioTools.dll"
-#r @"..\..\..\packages\FSharpAux\lib\netstandard2.0\FSharpAux.dll"
 #r @"..\..\..\packages\Deedle\lib\netstandard2.0\Deedle.dll"
 #r @"..\..\..\packages\SharpZipLib\lib\netstandard2.0\ICSharpCode.SharpZipLib.dll"
 #r @"..\..\..\packages\BioFSharp\lib\netstandard2.0\BioFSharp.dll"
@@ -11,11 +13,15 @@
 #r @"..\..\..\packages\FSharp.Plotly\lib\netstandard2.0\FSharp.Plotly.dll"
 #r "netstandard"
 
+#load @"..\..\..\packages\Deedle\Deedle.fsx"
+
 open System.IO
 open System
+
 let dependencies = 
     [
         @"../../..\packages\Docker.DotNet\lib\netstandard2.0\Docker.DotNet.dll"
+        @"..\..\..\packages\FSharpAux.IO\lib\netstandard2.0\FSharpAux.IO.dll"
         @"../../..\packages\SharpZipLib\lib\netstandard2.0\ICSharpCode.SharpZipLib.dll"
     ]
 
@@ -508,318 +514,145 @@ let intaRNASimple probe target =
     with e as exn -> printfn "FAIL"
                      nan
 
-let dataframe : Frame<string,string>= 
-    let numericKeys = 
-        Frame.ReadCsv(path = @"C:\Users\Kevin\source\repos\CsbScaffold\Ramping(Challenge)\data\nac2Probes.txt",separators="\t") 
-        |> Frame.indexRows "Probe name"
-        |> Frame.getNumericCols
-        |> Frame.ofColumns
-        |> Frame.dropCol "Probe position1"
-        |> Frame.dropCol "Probe length [nt]" 
-        |> Frame.dropCol "Probe GC content [%]" 
-        |> fun x -> 
-            x.ColumnKeys 
-            |> Seq.map (fun x ->    printfn "%s" x
-                                    sprintf "%s=float" x) 
-            |> String.concat ","
 
-    Frame.ReadCsv(path = @"C:\Users\Kevin\source\repos\CsbScaffold\Ramping(Challenge)\data\nac2Probes.txt",separators="\t",schema=numericKeys)     
-    |> Frame.indexRows "Probe name"
+type BlastNParams = 
+    |MaxEval of int
+    |WordSize of int
+    |GapOpenCost of int
+    |GapExtendCost of int
+    |MatchScore of int
+    |MissMatchPenalty of int
 
-let geneNameMapping : Frame<string,string>= 
-    Frame.ReadCsv(path = @"C:\Users\Kevin\source\repos\CsbScaffold\Ramping(Challenge)\data\Chloro ORFs sortiert byDavid.csv",separators = ",")
-    |> Frame.dropCol "Column5"
-    |> Frame.dropCol "Column6"
-    |> Frame.dropCol "Column7"
-    |> Frame.dropCol "Column8"
-    |> Frame.indexRows "Name"
+    static member makeCmd =
+        function
+        |MaxEval          i -> ["-"; string i]
+        |WordSize         i -> ["-word_size"; string i ]
+        |GapOpenCost      i -> ["-"; string i ]
+        |GapExtendCost    i -> ["-"; string i ]
+        |MatchScore       i -> ["-"; string i ]
+        |MissMatchPenalty i -> ["-"; string i ]
 
+open FSharpAux.IO.FileIO
+open BioFSharp.IO
 
-let cleanedData : Frame<string,string> =
-    dataframe
-    |> Frame.dropCol "Probe position1"
-    |> Frame.dropCol "Probe length [nt]"
-    |> Frame.dropCol "Probe GC content [%]"
-    |> Frame.dropCol "Probe within ORF2"
-    |> Frame.filterCols (fun ck _ -> not (ck.Contains("Probe counts")))
-    |> Frame.filterCols (fun ck _ -> not (ck.Contains("Normalized ORF Median")))
+let chlamyCDNAs = 
+    FastA.fromFile (BioArray.ofNucleotideString)(__SOURCE_DIRECTORY__ +  @"..\..\..\..\docsrc\content\data\Chlamydomonas_reinhardtii.Chlamydomonas_reinhardtii_v5.5.cdna.all.fa")
+    |> Array.ofSeq
 
-let cleanedDataWithGenes : Frame<string*(string*string),string>=
-    cleanedData
-    |> Frame.join JoinKind.Inner geneNameMapping
-    |> Frame.groupRowsBy "strand"
-    |> Frame.dropCol "strand"
-    |> Frame.dropCol "Strand"
-    |> Frame.dropCol "position"
-    |> Frame.groupRowsBy "GeneName"
-    |> Frame.dropCol "GeneName"
-    |> Frame.sortRowsByKey
+let ImageBlast = Docker.DockerId.ImageId "blast"
 
+let blastContext = 
+    BioContainer.initBcContextWithMountAsync client ImageBlast @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data"
+    |> Async.RunSynchronously
 
-let rnaCleaned = 
-    cleanedDataWithGenes
-    |> Frame.filterCols (fun ck _ -> ck = "Probe sequence" || not(ck.Contains("Ribosome footprints")))
+let makeBlastDBParams =
+    [
+        MakeDbParams.DbType Nucleotide
+        MakeDbParams.Input  @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\Chlamydomonas_reinhardtii.Chlamydomonas_reinhardtii_v5.5.cdna.all.fa"
+        MakeDbParams.Output @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\Chlamydomonas_reinhardtii.Chlamydomonas_reinhardtii_v5.5.cdna.all.fa"
+    ]
 
-let profilesCleaned =
-    cleanedDataWithGenes
-    |> Frame.filterCols (fun ck _ -> ck = "Probe sequence" || (ck.Contains("Ribosome footprints")))
-
-
-let rnaCleanedWithHybridisation =
-    rnaCleaned
-    |> fun x ->
-        let hCol = 
-            rnaCleaned
-            |> Frame.mapRowValues 
-                (fun os -> 
-                    let probeDNA = os.GetAs<string>("Probe sequence") |> BioArray.ofNucleotideString
-                    let targetRNA = probeDNA |> BioArray.transcribeCodeingStrand
-                    let probeRNA = targetRNA |> Array.map Nucleotides.complement
-                    let hybridEnergy = intaRNASimple (probeRNA |> BioArray.toString) (targetRNA |> BioArray.toString |> String.rev)
-                    hybridEnergy
-                    )
-        x
-        |> Frame.addCol "HybridizationEnergy" hCol
-
-let profilesCleanedWithHybridisation =
-    profilesCleaned
-    |> fun x ->
-        let hCol = 
-            rnaCleaned
-            |> Frame.mapRowValues 
-                (fun os -> 
-                    let probeDNA = os.GetAs<string>("Probe sequence") |> BioArray.ofNucleotideString
-                    let targetRNA = probeDNA |> BioArray.transcribeCodeingStrand
-                    let probeRNA = targetRNA |> Array.map Nucleotides.complement
-                    let hybridEnergy = intaRNASimple (probeRNA |> BioArray.toString) (targetRNA |> BioArray.toString |> String.rev)
-                    hybridEnergy
-                    )
-        x
-        |> Frame.addCol "HybridizationEnergy" hCol
-
-
-//let rnaCleanedWithHybridisation2 =
-//    rnaCleaned
-//    |> fun x ->
-//        let hCol = 
-//            rnaCleaned
-//            |> Frame.mapRowValues 
-//                (fun os -> 
-//                    let probeDNA = os.GetAs<string>("Probe sequence") |> BioArray.ofNucleotideString
-//                    let targetRNA = probeDNA |> BioArray.transcribeTemplateStrand
-//                    let hybridEnergy = intaRNASimple (probeDNA |> BioArray.toString) (targetRNA |> BioArray.toString)
-//                    hybridEnergy
-//                    )
-//        x
-//        |> Frame.addCol "HybridizationEnergy" hCol
-
-open FSharp.Stats
-open FSharp.Plotly
-
-let profilesData : Frame<string*(string*string),string>= 
-    profilesCleanedWithHybridisation
-    |> Frame.dropSparseRows
-    |> Frame.filterCols (fun ck _ -> not (ck.Contains("_Replicate_3")))
-    |> Frame.groupRowsBy "Probe sequence"
-    |> Frame.mapRowKeys (fun (pSeq,(gene,(strand,pName))) -> (gene,(strand,pSeq)))
-    |> Frame.dropCol "Probe sequence"
-    |> Frame.filterCols (fun ck _ -> ck.Contains("(F635 Median - B635") || ck = "HybridizationEnergy")
-    |> Frame.sortRowsByKey
-
-let profileRegression1,profileRegression2 =
-    let energy : Series<string*(string*string),float> = profilesData.GetColumn "HybridizationEnergy"
-    let rep1 : Series<string*(string*string),float> = profilesData.GetColumn "Ribosome footprints_Replicate_1_Median (F635 Median - B635)"
-    let rep2 : Series<string*(string*string),float> = profilesData.GetColumn "Ribosome footprints_Replicate_2_Median (F635 Median - B635)"
-
-    Series.zipInner energy rep1
-    |> Series.applyLevel 
-        (fun (gene,(strand,pSeq)) -> gene)
-        (fun ser -> 
-            ser 
-            |> Series.values 
-            |> Seq.unzip
-            |> fun (a,b) -> 
-                let coeffs = FSharp.Stats.Fitting.LinearRegression.OrdinaryLeastSquares.Linear.Univariable.coefficient (vector (a)) (vector b)
-                let fitFunc = FSharp.Stats.Fitting.LinearRegression.OrdinaryLeastSquares.Linear.Univariable.fit coeffs
-                let rSquared = FSharp.Stats.Fitting.GoodnessOfFit.calulcateSumOfSquares fitFunc a b |> FSharp.Stats.Fitting.GoodnessOfFit.calulcateDetermination
-                series [
-                    
-                    "Intercept" => coeffs.[0]
-                    "Slope"     => coeffs.[1]
-                    "R2"        => rSquared
-                ]
-                )
-    |> Frame.ofRows
-    |> fun x -> 
-    let dataCol =
-        Series.zipInner energy rep1
-        |> Series.applyLevel 
-            (fun (gene,(strand,pSeq)) -> gene)
-            (fun ser -> 
-                ser 
-                |> Series.values 
-                |> Array.ofSeq)
-    Frame.addCol "XY" dataCol x
-    ,
-
-        
-    Series.zipInner energy rep2
-    |> Series.applyLevel 
-        (fun (gene,(strand,pSeq)) -> gene)
-        (fun ser -> 
-            ser 
-            |> Series.values 
-            |> Seq.unzip
-            |> fun (a,b) -> 
-                let coeffs = FSharp.Stats.Fitting.LinearRegression.OrdinaryLeastSquares.Linear.Univariable.coefficient (vector a) (vector b)
-                let fitFunc = FSharp.Stats.Fitting.LinearRegression.OrdinaryLeastSquares.Linear.Univariable.fit coeffs
-                let rSquared = FSharp.Stats.Fitting.GoodnessOfFit.calulcateSumOfSquares fitFunc a b |> FSharp.Stats.Fitting.GoodnessOfFit.calulcateDetermination
-                series [
-                    "Intercept" => coeffs.[0]
-                    "Slope"     => coeffs.[1]
-                    "R2"        => rSquared
-                ]
-                )
-        |> Frame.ofRows
-        |> fun x -> 
-            let dataCol =
-                Series.zipInner energy rep2
-                |> Series.applyLevel 
-                    (fun (gene,(strand,pSeq)) -> gene)
-                    (fun ser -> 
-                        ser 
-                        |> Series.values 
-                        |> Array.ofSeq)
-            Frame.addCol "XY" dataCol x
-
+let outputFormat= 
     
-let rnaData : Frame<string*(string*string),string>= 
-    rnaCleanedWithHybridisation
-    |> Frame.dropSparseRows
-    |> Frame.filterCols (fun ck _ -> not (ck.Contains("_Replicate_3")))
-    |> Frame.groupRowsBy "Probe sequence"
-    |> Frame.mapRowKeys (fun (pSeq,(gene,(strand,pName))) -> (gene,(strand,pSeq)))
-    |> Frame.dropCol "Probe sequence"
-    |> Frame.filterCols (fun ck _ -> ck.Contains("(F532 Median - B532") || ck = "HybridizationEnergy")
-    |> Frame.sortRowsByKey
+    [   
+        OutputCustom.Query_SeqId; 
+        OutputCustom.Subject_SeqId;
+        OutputCustom.Query_Length;
+        OutputCustom.Subject_Length;
+        OutputCustom.AlignmentLength;
+        OutputCustom.MismatchCount;
+        OutputCustom.IdentityCount;
+        OutputCustom.PositiveScoringMatchCount;
+        OutputCustom.Evalue;
+        OutputCustom.Bitscore;
+    ] 
 
-
-let rnaRegression1,rnaRegression2 =
-    let energy : Series<string*(string*string),float> = rnaData.GetColumn "HybridizationEnergy"
-    let rep1 : Series<string*(string*string),float> = rnaData.GetColumn "RNA_Replicate_1_Median (F532 Median - B532)"
-    let rep2 : Series<string*(string*string),float> = rnaData.GetColumn "RNA_Replicate_2_Median (F532 Median - B532)"
-
-    Series.zipInner energy rep1
-    |> Series.applyLevel 
-        (fun (gene,(strand,pSeq)) -> gene)
-        (fun ser -> 
-            ser 
-            |> Series.values 
-            |> Seq.unzip
-            |> fun (a,b) -> 
-                let coeffs = FSharp.Stats.Fitting.LinearRegression.OrdinaryLeastSquares.Linear.Univariable.coefficient (vector a) (vector b)
-                let fitFunc = FSharp.Stats.Fitting.LinearRegression.OrdinaryLeastSquares.Linear.Univariable.fit coeffs
-                let rSquared = FSharp.Stats.Fitting.GoodnessOfFit.calulcateSumOfSquares fitFunc a b |> FSharp.Stats.Fitting.GoodnessOfFit.calulcateDetermination
-                series [
-                    "Intercept" => coeffs.[0]
-                    "Slope"     => coeffs.[1]
-                    "R2"        => rSquared
-                ]
-                )
-    |> Frame.ofRows
-    |> fun x -> 
-        let dataCol =
-            Series.zipInner energy rep1
-            |> Series.applyLevel 
-                (fun (gene,(strand,pSeq)) -> gene)
-                (fun ser -> 
-                    ser 
-                    |> Series.values 
-                    |> Array.ofSeq)
-        Frame.addCol "XY" dataCol x
-    ,
-
-        
-    Series.zipInner energy rep2
-    |> Series.applyLevel 
-        (fun (gene,(strand,pSeq)) -> gene)
-        (fun ser -> 
-            ser 
-            |> Series.values 
-            |> Seq.unzip
-            |> fun (a,b) -> 
-                let coeffs = FSharp.Stats.Fitting.LinearRegression.OrdinaryLeastSquares.Linear.Univariable.coefficient (vector a) (vector b)
-                let fitFunc = FSharp.Stats.Fitting.LinearRegression.OrdinaryLeastSquares.Linear.Univariable.fit coeffs
-                let rSquared = FSharp.Stats.Fitting.GoodnessOfFit.calulcateSumOfSquares fitFunc a b |> FSharp.Stats.Fitting.GoodnessOfFit.calulcateDetermination
-                series [
-                    "Intercept" => coeffs.[0]
-                    "Slope"     => coeffs.[1]
-                    "R2"        => rSquared
-                ]
-                )
-        |> Frame.ofRows
-        |> fun x -> 
-            let dataCol =
-                Series.zipInner energy rep2
-                |> Series.applyLevel 
-                    (fun (gene,(strand,pSeq)) -> gene)
-                    (fun ser -> 
-                        ser 
-                        |> Series.values 
-                        |> Array.ofSeq)
-            Frame.addCol "XY" dataCol x
-
-let a = 
-    [rnaRegression1;rnaRegression2]
-    |> List.mapi 
-        (fun i x ->
-            x
-            |> Frame.mapRows 
-                (fun rk os ->
-                    let coeffs = [os.GetAs<float>("Intercept");os.GetAs<float>("Slope")] |> vector
-                    let fitFunc = FSharp.Stats.Fitting.LinearRegression.OrdinaryLeastSquares.Linear.Univariable.fit coeffs
-                    let xy = os.GetAs<((float*float) [])>("XY")
-                    let x = xy |> Array.map fst
-                    let fitY = [|-100. .. 100.|] |> Array.map fitFunc
-                    let plots =
-                        [
-                        Chart.Point(xy)
-                        |> Chart.withTraceName (sprintf "%s_Values" rk)
-
-                        Chart.Line(Seq.zip [|-100. .. 0.|] fitY)
-                        |> Chart.withTraceName (sprintf "%s_Fit" rk)
-                        ]
-                        |> Chart.Combine 
-
-                    plots
-                )
+let blastNParamz = [
+    BlastParams.SearchDB    @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\Chlamydomonas_reinhardtii.Chlamydomonas_reinhardtii_v5.5.cdna.all.fa"
+    BlastParams.Query       @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\BlastQueries.fasta"
+    BlastParams.Output      @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\BlastQueriesResults.fasta"
+    OutputTypeCustom
+        (
+             OutputType.TabularWithComments,
+             [   
+                OutputCustom.Qu
+                OutputCustom.Query_SeqId; 
+                OutputCustom.Subject_SeqId;
+                OutputCustom.Query_Length;
+                OutputCustom.Subject_Length;
+                OutputCustom.AlignmentLength;
+                OutputCustom.MismatchCount;
+                OutputCustom.IdentityCount;
+                OutputCustom.PositiveScoringMatchCount;
+                OutputCustom.Evalue;
+                OutputCustom.Bitscore;
+             ] 
         )
+]
 
-a
-|> List.map (fun x -> x |> Series.values |> Chart.Combine |> Chart.withSize (1000.,1000.) |> Chart.Show) 
+let testItem = 
+    chlamyCDNAs
+    |> Seq.item 1337
 
-[profileRegression1;profileRegression2]
-|> List.mapi 
-    (fun i x ->
-        x
-        |> Frame.mapRows 
-            (fun rk os ->
-                let coeffs = [os.GetAs<float>("Intercept");os.GetAs<float>("Slope")] |> vector
-                let fitFunc = FSharp.Stats.Fitting.LinearRegression.OrdinaryLeastSquares.Linear.Univariable.fit coeffs
-                let xy = os.GetAs<((float*float) [])>("XY")
-                let x = xy |> Array.map fst
-                let fitY = [|-100. .. 100.|] |> Array.map fitFunc
-                let plots =
-                    [
-                    Chart.Point(xy)
-                    |> Chart.withTraceName (sprintf "%s_Values" rk)
-
-                    Chart.Line(Seq.zip [|-100. .. 0.|] fitY)
-                    |> Chart.withTraceName (sprintf "%s_Fit" rk)
-                    ]
-                    |> Chart.Combine 
-
-                plots
+let generatePrimerPairs (length:int) (templateSpan:int) (item:FastA.FastaItem<BioArray.BioArray<Nucleotides.Nucleotide>>) =
+    let header = item.Header
+    item.Sequence
+    |> Array.windowed ((2 * length) + templateSpan)
+    |> Array.mapi
+        (fun i flankedTemplate -> 
+            let fwdPrimer = flankedTemplate.[0 .. length-1]
+            let revPrimer = 
+                // reverse primer is reversed complementary strand
+                flankedTemplate.[length - 1 + templateSpan .. (2 * length) + templateSpan - 1]
+                |> Array.map (Nucleotides.complement)
+                |> Array.rev
+            [|
+                (sprintf "%i_fwd_%s" i header),fwdPrimer
+                (sprintf "%i_rev_%s" i header),revPrimer
+            |]
             )
-    )
-|> List.map (fun x -> x |> Series.values |> Chart.Combine |> Chart.withSize (1000.,1000.) |> Chart.Show) 
+    |> Array.concat
+    |> Array.map (fun (header,sequence) -> FastA.createFastaItem header sequence)
+
+let testPrimers = 
+    testItem
+    |> generatePrimerPairs 20 100
+
+testPrimers
+|> FastA.write (BioItem.symbol) @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\BlastQueries.fasta" 
+
+
+let runBlastNShortAsync (bcContext:BioContainer.BcContext) (opt:BlastParams list) = 
+    let cmds = (opt |> List.map (BlastParams.makeCmdWith bcContext.Mount))
+    let tp = ["blastn"; "-task"; "blastn-short"] @(cmds |> List.concat)
+
+    printfn "Starting process blastn\r\nparameters:"
+    cmds |> List.iter (fun op -> printfn "\t%s" (String.concat " " op))
+
+    async {
+            let! res = BioContainer.execAsync bcContext tp           
+            return res
+ 
+    }
+
+let runBlastNShort (bcContext:BioContainer.BcContext) (opt:BlastParams list) =
+    runBlastNShortAsync bcContext opt
+    |> Async.RunSynchronously
+
+
+Blast.runMakeBlastDB blastContext makeBlastDBParams 
+
+runBlastNShort blastContext blastNParamz
+
+let headerString = ["query id\tsubject id\tquery length\tsubject length\talignment length\tmismatches\tidentical\tpositives\tevalue\tbit score"]
+
+let BlastStream = 
+    FSharpAux.IO.FileIO.readFile @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\BlastQueriesResults.fasta" |> Seq.filter (fun x -> not (x.StartsWith("#")))
+    |> fun x -> Seq.append headerString x
+    |> FSharpAux.IO.FileIO.writeToFile false  @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\BlastQueriesResultsCleaned.txt" 
+
+
+let results = 
+    let resultSchema = "evalue=float,bit score=float"
+    Frame.ReadCsv(path = @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\BlastQueriesResultsCleaned.txt" , separators = "\t",schema=resultSchema)
+    |> Frame.filterRows (fun _ os -> os.GetAs<int>("query length") <> os.GetAs<int>("alignment length") &&  os.GetAs<int>("query length") <> os.GetAs<int>("identical")) 
