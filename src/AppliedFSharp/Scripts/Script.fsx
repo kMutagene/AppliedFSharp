@@ -727,11 +727,13 @@ let results =
     Frame.ReadCsv(path = @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\BlastQueriesResultsCleaned.txt" , separators = "\t",schema=resultSchema)
     |> Frame.filterRows (fun _ os -> os.GetAs<int>("query length") <> os.GetAs<int>("alignment length") &&  os.GetAs<int>("query length") <> os.GetAs<int>("identical")) 
 
-let groupedByHQueryId : Frame<string*int,string> =  
-    results
-    |> Frame.groupRowsBy "query id"
 
 let sortedFrameForHybridization : Frame<(string*(string*(string*int))),string>=
+    
+    let groupedByHQueryId : Frame<string*int,string> =  
+        results
+        |> Frame.groupRowsBy "query id"
+
     groupedByHQueryId
     |> Frame.mapRowKeys 
         (fun (seqHeader,index) -> 
