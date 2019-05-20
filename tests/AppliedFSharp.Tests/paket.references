@@ -4,3 +4,5 @@ Expecto
 Expecto.BenchmarkDotNet
 Expecto.FsCheck
 Expecto.VisualStudio.TestAdapter
+
+BioFSharp.BioTools
