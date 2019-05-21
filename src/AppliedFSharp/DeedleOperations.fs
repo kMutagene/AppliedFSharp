@@ -8,13 +8,14 @@ module DeedleOperations =
     open BioContainer
 
     let readCleanedBlastResultFrame path = 
-        let resultSchema = "evalue=float,bit score=float"
-        Frame.ReadCsv(path = path , separators = "\t",schema=resultSchema)
+        printfn "Reading cleaned Blast result"
+
+        Frame.ReadCsv(path = path , separators = "\t")
         |> Frame.filterRows (fun _ os -> os.GetAs<int>("query length") <> os.GetAs<int>("alignment length") &&  os.GetAs<int>("query length") <> os.GetAs<int>("identical")) 
 
 
     let sortFrameForHybridization (cleanBlastResultFrame : Frame<int,string>) : Frame<(string*(string*(string*int))),string>=
-    
+        printfn "sorting frame before calculating hybridisation ernergy"
         let groupedByHQueryId : Frame<string*int,string> =  
             cleanBlastResultFrame
             |> Frame.groupRowsBy "query id"
@@ -38,6 +39,7 @@ module DeedleOperations =
 
 
     let getHybridizationCandidatesFrame (primerSequenceMap:Frame<string,string>) (frameForHybridisation: Frame<(string*(string*(string*int))),string>) =
+        printfn "sorting frame before calculating hybridisation ernergy"
         frameForHybridisation
         |> Frame.applyLevel 
             (fun (targetGene,(simNum,(direction,index))) -> (targetGene,(simNum,direction)))
@@ -51,7 +53,6 @@ module DeedleOperations =
 
 
     let getResultFrameWithHybridisationEnergies (bcContext:BioContainer.BcContext) (hybridizationCandidatesFrame : Frame<(string*(string*string)),string>)  =
-
         let reverseSet =
             hybridizationCandidatesFrame
             |> Frame.filterRows (fun (_,(_,direction)) _ -> direction = "rev")
@@ -111,7 +112,6 @@ module DeedleOperations =
                 |> Frame.addCol "SelfAlign" selfAlignCol
                 |> Frame.addCol "Loop" LoopCol
 
-
         let fwdSeqs = 
             fwdSetHybridizationScored
             |> Frame.getCol "Sequence"
@@ -122,7 +122,7 @@ module DeedleOperations =
             |> Series.mapKeys (fun (a,(b,c)) -> a,b)
         let alSeries = 
             Series.zipInner fwdSeqs revSeqs
-            |> Series.mapValues (fun (fwd,rev) -> IntaRNA.DefaultConfig.intaRNASimple fwd rev)
+            |> Series.mapValues (fun (fwd,rev) -> IntaRNA.DefaultConfig.intaRNASimple bcContext fwd rev)
         fwdSetHybridizationScored
         |> Frame.addCol "PrimerCrossHybridization" (alSeries |> Series.mapKeys (fun (a,b) -> a,(b,"fwd")))
         |> Frame.merge (revSetHybridizationScored |> Frame.addCol "PrimerCrossHybridization" (alSeries |> Series.mapKeys (fun (a,b) -> a,(b,"rev"))))

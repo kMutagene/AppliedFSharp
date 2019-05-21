@@ -45,18 +45,19 @@ module Pipeline =
 
 
     ///
-    let blastPrimerPairs (blastContext: BioContainer.BcContext) (dbPath:string) (queryFastaPath:string) (blastResultOutputPath:string) =
+    let blastPrimerPairs (blastContext: BioContainer.BcContext) (dbPath:string) (queryFastaPath:string) (blastResultOutputPath:string)  (cleanedBlastResultOutputPath:string)=
         try 
-            ContainerAPIs.BlastExtension.DefaultConfig.runBlastNShortDefault blastContext dbPath queryFastaPath
+            ContainerAPIs.BlastExtension.DefaultConfig.runBlastNShortDefault blastContext dbPath queryFastaPath blastResultOutputPath
+            printfn "WUT"
         with e as exn ->
             failwithf "BlastN failed with:\r\n%s" e.Message
 
 
         let headerString = ["query id\tsubject id\tquery length\tsubject length\talignment length\tmismatches\tidentical\tpositives\tevalue\tbit score"]
-
-        FSharpAux.IO.FileIO.readFile queryFastaPath |> Seq.filter (fun x -> not (x.StartsWith("#")))
+        printfn "SO\r\nO\r\nO\r\n=\r\n"
+        FSharpAux.IO.FileIO.readFile blastResultOutputPath |> Seq.filter (fun x -> not (x.StartsWith("#")))
         |> fun x -> Seq.append headerString x
-        |> FSharpAux.IO.FileIO.writeToFile false blastResultOutputPath
+        |> FSharpAux.IO.FileIO.writeToFile false cleanedBlastResultOutputPath
 
     /// (x.Header.Split(' ').[0].Trim())
     let getResultFrame (intaRNAContext: BioContainer.BcContext) (cleanedBlastResultPath:string) (fastaHeaderConverter: string -> string) (queries: FastA.FastaItem<Nucleotides.Nucleotide[]>[]) =
@@ -75,16 +76,16 @@ module Pipeline =
 
     module DefaultConfig =
         
-        let runDefaultPipeline (primerLength:int) (templateLength:int) (blastContext: BioContainer.BcContext) (dbPath:string) (queryFastaOutputPath:string) (blastResultOutputPath:string) (intaRNAContext: BioContainer.BcContext) (gene:FastA.FastaItem<BioArray.BioArray<Nucleotides.Nucleotide>>)=
+        let runDefaultPipeline (primerLength:int) (templateLength:int) (blastContext: BioContainer.BcContext) (dbPath:string) (queryFastaOutputPath:string) (blastResultOutputPath:string)  (cleanedBlastResultOutputPath:string) (intaRNAContext: BioContainer.BcContext) (gene:FastA.FastaItem<BioArray.BioArray<Nucleotides.Nucleotide>>)=
             //
             let queries =  generatePrimerPairs primerLength templateLength gene
             //
             queries
             |> preparePrimerBlastSearch blastContext dbPath queryFastaOutputPath
             //
-            blastPrimerPairs intaRNAContext dbPath queryFastaOutputPath blastResultOutputPath
+            blastPrimerPairs blastContext dbPath queryFastaOutputPath blastResultOutputPath cleanedBlastResultOutputPath
             //
-            getResultFrame intaRNAContext blastResultOutputPath (fun x -> x.Split(' ').[0].Trim()) queries
+            getResultFrame intaRNAContext cleanedBlastResultOutputPath (fun x -> x.Split(' ').[0].Trim()) queries
 
 
 
