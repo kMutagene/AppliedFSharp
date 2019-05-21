@@ -496,11 +496,11 @@ module ContainerAPIs =
                     OutputCustom.Bitscore;
                 ] 
 
-            let private createBlastNParams dbPath queryPath  = 
+            let private createBlastNParams dbPath queryPath outputPath = 
                 [
                     BlastParams.SearchDB    dbPath
                     BlastParams.Query       queryPath
-                    BlastParams.Output      dbPath
+                    BlastParams.Output      outputPath
                     OutputTypeCustom
                         (
                              OutputType.TabularWithComments,
@@ -522,5 +522,5 @@ module ContainerAPIs =
             let runMakeBlastDBDefault (bcContext:BioContainer.BcContext) dbPath = 
                 Blast.runMakeBlastDB bcContext (createMakeBlastDBParams dbPath)
 
-            let runBlastNShortDefault (bcContext:BioContainer.BcContext) dbPath queryPath = 
-                runBlastNShort bcContext (createBlastNParams dbPath queryPath)
+            let runBlastNShortDefault (bcContext:BioContainer.BcContext) dbPath queryPath outputPath = 
+                runBlastNShort bcContext (createBlastNParams dbPath queryPath outputPath)
