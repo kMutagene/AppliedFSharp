@@ -9,7 +9,7 @@ module Pipeline =
     open BioFSharp.IO
     open BioFSharp.BioTools
 
-    
+    ///Generates all possible primer pairs of lenght n flanking a sequence of length m from an input gene
     let generatePrimerPairs (length:int) (templateSpan:int) (item:FastA.FastaItem<BioArray.BioArray<Nucleotides.Nucleotide>>) =
         let header = item.Header
         item.Sequence
@@ -31,7 +31,7 @@ module Pipeline =
         |> Array.map (fun (header,sequence) -> FastA.createFastaItem header sequence)
 
 
-
+    ///Prepare a blast database for subsequent blast searches. For best feature calculation, use the full cDNA transcriptome of the organism
     let preparePrimerBlastSearch (blastContext: BioContainer.BcContext) (dbPath:string) (queryFastaOutputPath:string) (queries: FastA.FastaItem<Nucleotides.Nucleotide[]>[]) =
         //
         try
@@ -44,7 +44,7 @@ module Pipeline =
         //
 
 
-    ///
+    ///Blast all generated primer pairs against the previously generated database. results are written to a file of choice.
     let blastPrimerPairs (blastContext: BioContainer.BcContext) (dbPath:string) (queryFastaPath:string) (blastResultOutputPath:string)  (cleanedBlastResultOutputPath:string)=
         try 
             ContainerAPIs.BlastExtension.DefaultConfig.runBlastNShortDefault blastContext dbPath queryFastaPath blastResultOutputPath
@@ -59,7 +59,7 @@ module Pipeline =
         |> fun x -> Seq.append headerString x
         |> FSharpAux.IO.FileIO.writeToFile false cleanedBlastResultOutputPath
 
-    /// (x.Header.Split(' ').[0].Trim())
+    ///Calculates hybridization energy features for the given blast results
     let getResultFrame (intaRNAContext: BioContainer.BcContext) (cleanedBlastResultPath:string) (fastaHeaderConverter: string -> string) (queries: FastA.FastaItem<Nucleotides.Nucleotide[]>[]) =
   
         let primerSequenceMap =
@@ -73,7 +73,7 @@ module Pipeline =
         |> getHybridizationCandidatesFrame primerSequenceMap
         |> getResultFrameWithHybridisationEnergies intaRNAContext
 
-
+    /// The pipeline settings i used for my original script
     module DefaultConfig =
         
         let runDefaultPipeline (primerLength:int) (templateLength:int) (blastContext: BioContainer.BcContext) (dbPath:string) (queryFastaOutputPath:string) (blastResultOutputPath:string)  (cleanedBlastResultOutputPath:string) (intaRNAContext: BioContainer.BcContext) (gene:FastA.FastaItem<BioArray.BioArray<Nucleotides.Nucleotide>>)=
