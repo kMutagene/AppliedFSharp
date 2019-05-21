@@ -7,41 +7,16 @@
 AppliedFSharp
 ======================
 
+My submission for the applied F# challenge is a library resulting from a script i worked on to design primer pairs for qPCR.
+
 Documentation
-
-<div class="row">
-  <div class="span1"></div>
-  <div class="span6">
-    <div class="well well-small" id="nuget">
-      The AppliedFSharp library can be <a href="https://nuget.org/packages/AppliedFSharp">installed from NuGet</a>:
-      <pre>PM> Install-Package AppliedFSharp</pre>
-    </div>
-  </div>
-  <div class="span1"></div>
-</div>
-
-Example
--------
-
-This example demonstrates using a function defined in this sample library.
-
-*)
-#r "AppliedFSharp.dll"
-open AppliedFSharp
-
-printfn "hello = %i" <| Library.hello 0
-
-(**
-Some more info
 
 Samples & documentation
 -----------------------
 
-The library comes with comprehensible documentation. 
-It can include tutorials automatically generated from `*.fsx` files in [the content folder][content]. 
-The API reference is automatically generated from Markdown comments in the library implementation.
+ * [Pipeline walkthrough](tutorial.html) contains a step by step walkthrough that covers the essential data analysis steps.
 
- * [Tutorial](tutorial.html) contains a further explanation of this sample library.
+ * [Accessing Docker containers from F#](BioContainers.html) contains a brief overviw on how to use the experimental Docker.DotNet wrapper BioFSharp.BioTools.
 
  * [API Reference](reference/index.html) contains automatically generated documentation for all types, modules
    and functions in the library. This includes additional brief samples on using most of the
