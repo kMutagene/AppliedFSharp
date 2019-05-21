@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>DefaultConfig - AppliedFSharp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content=""/>
+    <meta name="author" content="Kevin Schneider"/>
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=11" >
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link type="text/css" rel="stylesheet" href="/AppliedFSharp/content/style.css" /> <!--/AppliedFSharp-->
+    <link type="text/css" rel="stylesheet" href="/AppliedFSharp/styles/CSBStyles.css" /> <!--/AppliedFSharp-->
+    <script type="text/javascript" src="/AppliedFSharp/content/tips.js"></script> <!--/AppliedFSharp-->
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="https://github.com/kMutagene/AppliedFSharp">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="/AppliedFSharp/index.html">AppliedFSharp</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+
+
+
+<h1>DefaultConfig</h1>
+<p>
+  <span>Namespace: AppliedFSharp</span><br />
+  <span>Parent Module: <a href="appliedfsharp-containerapis-intarna.html">IntaRNA</a></span>
+  </p>
+<div class="xmldoc">
+<p>Default settings i used in the original script</p>
+
+</div>
+
+<!-- Render nested types and modules, if there are any -->
+  <h2>Nested types and modules</h2>
+  <div>
+      <table class="table table-bordered type-list">
+    <thead>
+      <tr><td>Type</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td class="type-name">
+            <a href="appliedfsharp-containerapis-intarna-defaultconfig-detailedintarnaresult.html">DetailedIntaRNAResult</a>
+          </td>
+          <td class="xmldoc">
+          
+          </td>
+        </tr>
+        <tr>
+          <td class="type-name">
+            <a href="appliedfsharp-containerapis-intarna-defaultconfig-intarnaresult.html">IntaRNAResult</a>
+          </td>
+          <td class="xmldoc">
+          <p>Result of normal IntaRNA output mode</p>
+
+
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+  <h3>Functions and values</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Function or value</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '3', 3)" onmouseover="showTip(event, '3', 3)">
+            detailedIntaRNAResultofString(res)
+          </code>
+          <div class="tip" id="3">
+            <strong>Signature:</strong> res:string -&gt; DetailedIntaRNAResult<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="https://github.com/kMutagene/AppliedFSharp/tree/master/src/AppliedFSharp/ContainerAPIs.fs#L327-327" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>"Parses" a detailed intaRna output</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '4', 4)" onmouseover="showTip(event, '4', 4)">
+            intaRNADetailed bcContext probe target
+          </code>
+          <div class="tip" id="4">
+            <strong>Signature:</strong> bcContext:(type) -&gt; probe:string -&gt; target:string -&gt; DetailedIntaRNAResult<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="https://github.com/kMutagene/AppliedFSharp/tree/master/src/AppliedFSharp/ContainerAPIs.fs#L396-396" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>predefined IntaRNA settings applied to input probe and sequence given a bcContext returning a detailed output</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '5', 5)" onmouseover="showTip(event, '5', 5)">
+            intaRNAResultofString(res)
+          </code>
+          <div class="tip" id="5">
+            <strong>Signature:</strong> res:string -&gt; IntaRNAResult<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="https://github.com/kMutagene/AppliedFSharp/tree/master/src/AppliedFSharp/ContainerAPIs.fs#L361-361" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>"Parses" a normal intaRna output</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '6', 6)" onmouseover="showTip(event, '6', 6)">
+            intaRNASimple bcContext probe target
+          </code>
+          <div class="tip" id="6">
+            <strong>Signature:</strong> bcContext:(type) -&gt; probe:string -&gt; target:string -&gt; float<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="https://github.com/kMutagene/AppliedFSharp/tree/master/src/AppliedFSharp/ContainerAPIs.fs#L379-379" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>predefined IntaRNA settings applied to input probe and sequence given a bcContext returning a normal output</p>
+
+
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+        </div>
+        <div class="span3">
+          <img src="/AppliedFSharp/img/logo.png" alt="F# Project" style="width:150px;margin:10px" />  
+          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
+            <li class="nav-header">AppliedFSharp</li>
+            <li><a href="/AppliedFSharp/index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="https://github.com/kMutagene/AppliedFSharp">Source Code on GitHub</a></li>
+            <li><a href="/AppliedFSharp/license.html">License</a></li>
+            <li><a href="/AppliedFSharp/release-notes.html">Release Notes</a></li>
+            
+            <li class="nav-header">Getting started</li>
+            <li><a href="/AppliedFSharp/BioContainers.html">Acessing Docker containers from F#</a></li>
+            <li><a href="/AppliedFSharp/tutorial.html">Pipeline walkthrough</a></li>
+            <li class="nav-header">Documentation</li>
+            <li><a href="/AppliedFSharp/reference/index.html">API Reference</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="https://github.com/kMutagene/AppliedFSharp"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
+  </body>
+  </html>

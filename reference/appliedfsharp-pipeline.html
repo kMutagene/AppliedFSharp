@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>Pipeline - AppliedFSharp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content=""/>
+    <meta name="author" content="Kevin Schneider"/>
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=11" >
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link type="text/css" rel="stylesheet" href="/AppliedFSharp/content/style.css" /> <!--/AppliedFSharp-->
+    <link type="text/css" rel="stylesheet" href="/AppliedFSharp/styles/CSBStyles.css" /> <!--/AppliedFSharp-->
+    <script type="text/javascript" src="/AppliedFSharp/content/tips.js"></script> <!--/AppliedFSharp-->
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="https://github.com/kMutagene/AppliedFSharp">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="/AppliedFSharp/index.html">AppliedFSharp</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+
+
+
+<h1>Pipeline</h1>
+<p>
+  <span>Namespace: AppliedFSharp</span><br />
+  </p>
+<div class="xmldoc">
+</div>
+
+<!-- Render nested types and modules, if there are any -->
+
+  <h3>Functions and values</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Function or value</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '11', 11)" onmouseover="showTip(event, '11', 11)">
+            blastPrimerPairs(...)
+          </code>
+          <div class="tip" id="11">
+            <strong>Signature:</strong> blastContext:(type) -&gt; dbPath:string -&gt; queryFastaPath:string -&gt; blastResultOutputPath:string -&gt; cleanedBlastResultOutputPath:string -&gt; unit<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="https://github.com/kMutagene/AppliedFSharp/tree/master/src/AppliedFSharp/Pipeline.fs#L48-48" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Blast all generated primer pairs against the previously generated database. results are written to a file of choice.</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '12', 12)" onmouseover="showTip(event, '12', 12)">
+            generatePrimerPairs(...)
+          </code>
+          <div class="tip" id="12">
+            <strong>Signature:</strong> length:int -&gt; templateSpan:int -&gt; item:(type) -&gt; (type) []<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="https://github.com/kMutagene/AppliedFSharp/tree/master/src/AppliedFSharp/Pipeline.fs#L13-13" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Generates all possible primer pairs of lenght n flanking a sequence of length m from an input gene</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '13', 13)" onmouseover="showTip(event, '13', 13)">
+            getResultFrame(...)
+          </code>
+          <div class="tip" id="13">
+            <strong>Signature:</strong> intaRNAContext:(type) -&gt; cleanedBlastResultPath:string -&gt; fastaHeaderConverter:(string -&gt; string) -&gt; queries:(type) [] -&gt; (type)<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="https://github.com/kMutagene/AppliedFSharp/tree/master/src/AppliedFSharp/Pipeline.fs#L63-63" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Calculates hybridization energy features for the given blast results</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '14', 14)" onmouseover="showTip(event, '14', 14)">
+            preparePrimerBlastSearch(...)
+          </code>
+          <div class="tip" id="14">
+            <strong>Signature:</strong> blastContext:(type) -&gt; dbPath:string -&gt; queryFastaOutputPath:string -&gt; queries:(type) [] -&gt; unit<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="https://github.com/kMutagene/AppliedFSharp/tree/master/src/AppliedFSharp/Pipeline.fs#L35-35" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Prepare a blast database for subsequent blast searches. For best feature calculation, use the full cDNA transcriptome of the organism</p>
+
+
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+        </div>
+        <div class="span3">
+          <img src="/AppliedFSharp/img/logo.png" alt="F# Project" style="width:150px;margin:10px" />  
+          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
+            <li class="nav-header">AppliedFSharp</li>
+            <li><a href="/AppliedFSharp/index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="https://github.com/kMutagene/AppliedFSharp">Source Code on GitHub</a></li>
+            <li><a href="/AppliedFSharp/license.html">License</a></li>
+            <li><a href="/AppliedFSharp/release-notes.html">Release Notes</a></li>
+            
+            <li class="nav-header">Getting started</li>
+            <li><a href="/AppliedFSharp/BioContainers.html">Acessing Docker containers from F#</a></li>
+            <li><a href="/AppliedFSharp/tutorial.html">Pipeline walkthrough</a></li>
+            <li class="nav-header">Documentation</li>
+            <li><a href="/AppliedFSharp/reference/index.html">API Reference</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="https://github.com/kMutagene/AppliedFSharp"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
+  </body>
+  </html>
