@@ -118,23 +118,58 @@ let testPairs = Pipeline.generatePrimerPairs 10 100 testGene
 
 (** 
 ###Creating a blast search database from the cDNA source/transcriptome/genome using the Blast BioContainer
-*)
 
-let _ = Pipeline.preparePrimerBlastSearch
+The `preparePrimerBlastSearch` prepares a blast database for subsequent blast searches. For best feature calculation, use the full cDNA transcriptome/Genome of the organism
+*)
+(*** do-not-eval ***)
+let _ = 
+    Pipeline.preparePrimerBlastSearch 
+        blastContext 
+        "C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\Chlamydomonas_reinhardtii.Chlamydomonas_reinhardtii_v5.5.cdna.all.fa"
+        @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\PipeLineQueryTest.fasta"
+        testPairs
 
 (**
 ###Blasting all primer pairs against the search database using the Blast BioContainer
+
+the `blastPrimerPairs` blasts all generated primer pairs against the previously generated database. results are written to a file of choice.
 *)
+(*** do-not-eval ***)
+let _ = 
+    Pipeline.blastPrimerPairs
+        blastContext
+        @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\Chlamydomonas_reinhardtii.Chlamydomonas_reinhardtii_v5.5.cdna.all.fa"
+        @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\PipeLineQueryTest.fasta"
+        @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\PipeLineTestBlastOutput.fasta"
+        @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\PipeLineTestBlastOutputCleaned.fasta"
 
 (**
 ###Parsing the blast results in a deedle frame to handle grouping and filtering steps of the data
+
+###Calculating self hybridization/internal Loop/fwd-rev primer hybridization energy using the IntaRNA BioContainer
+
+this is both handled by the `getResultFrame` function, which parses the blast Results, Calculates hybridization energy features for the given blast results and groups them by query id and direction(fwd/rev)
+
+The result of this function is a frame that contains the features for all primer pairs.
 *)
+(*** do-not-eval ***)
+let result2 =
+    Pipeline.getResultFrame 
+        intaRNAContext 
+        @"C:\Users\Kevin\source\repos\AppliedFSharp\docsrc\content\data\PipeLineTestBlastOutputCleaned.fasta"
+        //this is unique for my case, you may want to add another converting function here. This converter gets the query id from the fasta files.
+        (fun (x:string) -> x.Split(' ').[0].Trim())
+        testPairs
+
 
 (**
-###Calculating self hybridization/internal Loop/fwd-rev primer hybridization energy using the IntaRNA BioContainer
+#Short Conclusion
+
+While this may be not the flashiest algorithm, i think my post highlights the strengths of F# in data science pretty well. In a little more than 3 days i was able to
+predict oligonucleotide interactions, blast sequences against genomes and group the results in a safe and visually acessible way during th exploratory data analysis. 
+
+Furthermore, the script was easily transferable to .fs files and therefore compiled as library in no time. I think F# has great applications in research and me and my group 
+aswell will continue to use it for all kinds of (bioinformatic) workflows
+
 *)
 
-
-
-
-*)
