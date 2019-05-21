@@ -23,7 +23,7 @@ For exploratory data analysis, i used [Deedle]().
 
 The output is a frame containing the features for fwd and rev primer sets:
 
-![ExampleResult]()
+![ExampleResult]((https://raw.githubusercontent.com/kMutagene/AppliedFSharp/master/src/docsrc/files/img/ExampleOutput..png)
 
 ## Prerequisites
 
