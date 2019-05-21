@@ -17,6 +17,7 @@
     <Compile Include="ContainerAPIs.fs" />
     <Compile Include="DeedleOperations.fs" />
     <Compile Include="Pipeline.fs" />
+    <None Include="Scripts\TestScript.fsx" />
     <None Include="Scripts\Script.fsx" />
     <None Include="paket.references" />
     <None Include="paket.template" />

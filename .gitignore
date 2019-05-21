@@ -185,3 +185,6 @@ docsrc/content/release-notes.md
 docsrc/tools/FSharp.Formatting.svclog
 docs
 temp
+/docsrc/content/data/PipeLineQueryTest.fasta
+/docsrc/content/data/PipeLineTestBlastOutput.fasta
+/docsrc/content/data/PipeLineTestBlastOutputCleaned.fasta

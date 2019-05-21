@@ -13,7 +13,6 @@
 #r @"..\..\packages\SharpZipLib\lib\netstandard2.0\ICSharpCode.SharpZipLib.dll"
 #r @"..\..\packages\BioFSharp\lib\netstandard2.0\BioFSharp.dll"
 #r @"..\..\packages\FSharp.Stats\lib\netstandard2.0\FSharp.Stats.dll"
-#r @"..\..\packages\FSharp.Plotly\lib\netstandard2.0\FSharp.Plotly.dll"
 #r "netstandard"
 
 #load @"..\..\packages\Deedle\Deedle.fsx"
@@ -41,25 +40,83 @@ let resolveDockerDotnetDependecies () =
 resolveDockerDotnetDependecies()
 
 (**
-Introducing your project
-========================
+Bioinformatic tools in docker container using BioFSharp.BioTools 
+================================================================
 
-Say more
+BioFSharp.BioTools is a f# wrapper for Docker.DotNet. In a nutshell, it starts a docker image and keeps it running, and therefore accessible for I/O.
+All that is needed is the name of the image. this is acessible for example in the docker cli:
+
+![Docker Images](img/DockerImages.png)
 
 *)
 
 open BioFSharp.BioTools
 
+//create a DockerId with the target image name, in this case the IntaRNA container
+(***do-not-eval***)
 let IntaRNAImage =  Docker.ImageName @"quay.io/biocontainers/intarna:2.4.1--pl526hfac12b2_0"
 
+//this is the standard pipe used for the docker engine
+(***do-not-eval***)
 let client = Docker.connect "npipe://./pipe/docker_engine"
 
-Docker.Image.exists client IntaRNAImage
-
+//keeps the target container running and accessible for iput
+(***do-not-eval***)
 let intaRNAContext = 
     BioContainer.initBcContextWithMountAsync client IntaRNAImage @"C:\Users\Kevin\source\repos\CsbScaffold\Ramping(Challenge)\results"
     |> Async.RunSynchronously
 
 (**
-Some more info
+Modelling the arguments of the process in the container
+=======================================================
+
+I modelled the IntaRNA parameters the same way I did with other tools in BioFSharp.BioTools: nested union cases. 
+Because i wanted to mount a folder into the container for I/O operations, those types need two functions that either create the
+argument string directly or shape the mounted path in a way that it is interpretable by the unix based system in the container. These functions are called
+`make`/`makeCmd` and `makeWith`/`makeCmdWith` , the second set of functions getting a `MountInfo` parameter to ensure path safety.
+
+Here is an example of a set of parameters from the IntaRNA BioContainer API:
 *)
+
+open BioFSharp.BioTools.BioContainer
+
+type QueryInputOptions =
+    ///RNA sequence string
+    |RNASequence of string
+    ///stream/file name from where to read the query sequences
+    |File of string
+    //returns the argument string for the cases above
+    static member make = function
+        |RNASequence s  -> ["-q"; s]
+        |File f         -> ["-q"; f]
+    //returns the argument string for the cases above, ensuring BioContainer path conventions
+    static member makeWith (m:MountInfo) = 
+        let cPath p = (MountInfo.containerPathOf m p)
+        function
+        |RNASequence s  -> ["-q"; s]        
+        |File f         -> ["-q"; cPath f]  
+
+(** 
+Running the Container from F# interactive
+=========================================
+The following function uses the `makeCmdWith` functions of the `IntaRNAParams` type to create a List of correctly formatted command line argument strings.
+
+The `BioContainer.execReturnAsync` function passes these arguments to the running container and returns the stdOut of the container when it has finished the comptation.
+*)
+
+open AppliedFSharp.ContainerAPIs.IntaRNA
+
+let runIntaRNAAsync (bcContext:BioContainer.BcContext) (opt:IntaRNAParams list) = 
+    //create command line argument strings
+    let cmds = opt |> List.map (IntaRNAParams.makeCmdWith bcContext.Mount)
+    //prepend the command befor the arguments
+    let tp = "IntaRNA"::(cmds |> List.concat)
+    printfn "starting process IntaRNA\r\nparameters:"
+    cmds |> List.iter (fun op -> printfn "\t%s" (String.concat " " op))
+    //Send command to the container and await result
+    async {
+        let! res = BioContainer.execReturnAsync bcContext tp
+        return res
+    }
+
+

@@ -20,9 +20,9 @@ open System
 
 let dependencies = 
     [
-        @"../../..\packages\Docker.DotNet\lib\netstandard2.0\Docker.DotNet.dll"
+        @"..\..\..\packages\Docker.DotNet\lib\netstandard2.0\Docker.DotNet.dll"
         @"..\..\..\packages\FSharpAux.IO\lib\netstandard2.0\FSharpAux.IO.dll"
-        @"../../..\packages\SharpZipLib\lib\netstandard2.0\ICSharpCode.SharpZipLib.dll"
+        @"..\..\..\packages\SharpZipLib\lib\netstandard2.0\ICSharpCode.SharpZipLib.dll"
     ]
 
 let resolveDockerDotnetDependecies () =
