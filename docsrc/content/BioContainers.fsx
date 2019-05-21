@@ -43,7 +43,7 @@ resolveDockerDotnetDependecies()
 Bioinformatic tools in docker container using BioFSharp.BioTools 
 ================================================================
 
-BioFSharp.BioTools is a f# wrapper for Docker.DotNet. In a nutshell, it starts a docker image and keeps it running, and therefore accessible for I/O.
+BioFSharp.BioTools is an experimental f# wrapper for Docker.DotNet that I and members of my group are working on. In a nutshell, it starts a docker image and keeps it running, and therefore accessible for I/O.
 All that is needed is the name of the image. this is acessible for example in the docker cli:
 
 ![Docker Images](img/DockerImages.png)
@@ -52,15 +52,15 @@ All that is needed is the name of the image. this is acessible for example in th
 
 open BioFSharp.BioTools
 
-//create a DockerId with the target image name, in this case the IntaRNA container
 (***do-not-eval***)
+//create a DockerId with the target image name, in this case the IntaRNA container
 let IntaRNAImage =  Docker.ImageName @"quay.io/biocontainers/intarna:2.4.1--pl526hfac12b2_0"
 
-//this is the standard pipe used for the docker engine
+(**this is the standard pipe used for the docker engine*)
 (***do-not-eval***)
 let client = Docker.connect "npipe://./pipe/docker_engine"
 
-//keeps the target container running and accessible for iput
+(**initializing ta BcContext keeps the target container running and accessible for I/O. Aditionally, a folder from your harddrive can be mounted into the container*)
 (***do-not-eval***)
 let intaRNAContext = 
     BioContainer.initBcContextWithMountAsync client IntaRNAImage @"C:\Users\Kevin\source\repos\CsbScaffold\Ramping(Challenge)\results"
