@@ -105,23 +105,34 @@ let testResult =
 
 
 (** 
-Step by step
-============
+#Step by step
 
-Creation of all possible primer pairs of length n flanking a template of length m for the input cDNA/gene
----------------------------------------------------------------------------------------------------------
 
-Creating a blast search database from the cDNA source/transcriptome/genome using the Blast BioContainer
--------------------------------------------------------------------------------------------------------
+###Creation of all possible primer pairs of length n flanking a template of length m for the input cDNA/gene
 
-Blasting all primer pairs against the search database using the Blast BioContainer
-----------------------------------------------------------------------------------
+the `generatePrimerPairs` function creates these primer pairs by moving over a sliding window of size 2*n+m and taking the flanking regions of length n
 
-Parsing the blast results in a deedle frame to handle grouping and filtering steps of the data
-----------------------------------------------------------------------------------------------
+*)
+(*** do-not-eval ***)
+let testPairs = Pipeline.generatePrimerPairs 10 100 testGene
 
-Calculating self hybridization/internal Loop/fwd-rev primer hybridization energy using the IntaRNA BioContainer
----------------------------------------------------------------------------------------------------------------
+(** 
+###Creating a blast search database from the cDNA source/transcriptome/genome using the Blast BioContainer
+*)
+
+let _ = Pipeline.preparePrimerBlastSearch
+
+(**
+###Blasting all primer pairs against the search database using the Blast BioContainer
+*)
+
+(**
+###Parsing the blast results in a deedle frame to handle grouping and filtering steps of the data
+*)
+
+(**
+###Calculating self hybridization/internal Loop/fwd-rev primer hybridization energy using the IntaRNA BioContainer
+*)
 
 
 
